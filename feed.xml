@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+	<channel>
+		<title>dba</title>
+		<description>Stylish Jekyll Theme</description>
+		<link>/</link>
+		<atom:link href="/feed.xml" rel="self" type="application/rss+xml" />
+		
+			<item>
+				<title>Mandatory Hello World</title>
+				<description>&lt;p&gt;Greetings,&lt;/p&gt;
+
+&lt;p&gt;My name is &lt;code class=&quot;highlighter-rouge&quot;&gt;Dany&lt;/code&gt;, even if you can call me &lt;code class=&quot;highlighter-rouge&quot;&gt;Rioru&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;I finally decided to launch my blog on &lt;code class=&quot;highlighter-rouge&quot;&gt;github&lt;/code&gt; using &lt;code class=&quot;highlighter-rouge&quot;&gt;Jekyll&lt;/code&gt; to generate my pages. I used to have a &lt;a href=&quot;https://ddxhunter.wordpress.com/2010/03/10/lfis-exploitation-techniques/&quot;&gt;&lt;strong&gt;blog&lt;/strong&gt;&lt;/a&gt; but since I created it when I was 17, I decided it was better to start once again from scratch.&lt;/p&gt;
+
+&lt;p&gt;This blog will mostly talk about computer security, generally from the point of view of a penetration tester. I’ll share my tips, tricks and thoughts here.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-php&quot; data-lang=&quot;php&quot;&gt;&lt;span class=&quot;cp&quot;&gt;&amp;lt;?php&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;Hello World&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;cp&quot;&gt;?&amp;gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;See you around.
+Cheers.&lt;/p&gt;
+</description>
+				<pubDate>Tue, 07 Mar 2017 00:00:00 +0100</pubDate>
+				<link>/general/2017/03/07/mandatory-hello-world.html</link>
+				<guid isPermaLink="true">/general/2017/03/07/mandatory-hello-world.html</guid>
+			</item>
+		
+	</channel>
+</rss>
