@@ -8,7 +8,9 @@
 		
 			<item>
 				<title>From unauthenticated to root on a supervision appliance</title>
-				<description>&lt;p&gt;On a recent penetration test, I had to opportunity to test the security of an open-source supervision appliance called &lt;code class=&quot;highlighter-rouge&quot;&gt;EyesOfNetwork&lt;/code&gt;. Multiple vulnerabilities have been found and will be reported in this post.&lt;/p&gt;
+				<description>&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;WIP&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;On a recent penetration test, I had to opportunity to test the security of an open-source supervision appliance called &lt;code class=&quot;highlighter-rouge&quot;&gt;EyesOfNetwork&lt;/code&gt;. Multiple vulnerabilities have been found and will be reported in this post.&lt;/p&gt;
 
 &lt;h3 id=&quot;what-is-eyesofnetwork&quot;&gt;What is EyesOfNetwork?&lt;/h3&gt;
 &lt;p&gt;From the official website:&lt;/p&gt;
@@ -189,7 +191,7 @@ user_id: 1;
 user_limitation: 0;
 group_id: 1;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
-&lt;p&gt;And using these cookies in a browser/curl, we are corectly authenticated on Eonweb with the &lt;code class=&quot;highlighter-rouge&quot;&gt;admin&lt;/code&gt; account.&lt;/p&gt;
+&lt;p&gt;And using these cookies in a browser/curl, we are correctly authenticated on Eonweb with the &lt;code class=&quot;highlighter-rouge&quot;&gt;admin&lt;/code&gt; account.&lt;/p&gt;
 
 &lt;h3 id=&quot;go-for-the-kill-privilege-escalation-using-snmp&quot;&gt;Go for the kill: Privilege escalation using snmp&lt;/h3&gt;
 &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;TODO&lt;/code&gt;&lt;/p&gt;
@@ -227,7 +229,7 @@ EyesOfNetwork (EON) 5.1 Unauthenticated SQL Injection in eonweb leading to remot
 
 Author:
 =======
-Dany Bach [@ddxhunter, github.io/rioru]
+Dany Bach [@ddxhunter, rioru.github.io]
 
 CVE-ID:
 =======
