@@ -59,6 +59,3 @@ DEPENDENCIES
   jekyll-gist
   jekyll-paginate
   pygments.rb
-
-BUNDLED WITH
-   1.13.6

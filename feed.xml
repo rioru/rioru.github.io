@@ -297,6 +297,7 @@ lo: &lt;span class=&quot;nv&quot;&gt;flags&lt;/span&gt;&lt;span class=&quot;o&qu
   &lt;li&gt;28th March 2017 - Created the proof of concept for the exploit&lt;/li&gt;
   &lt;li&gt;28th March 2017 - CVE request to DWF&lt;/li&gt;
   &lt;li&gt;29th March 2017 - Acknowledgement of the vendor&lt;/li&gt;
+  &lt;li&gt;07th May 2017 - Got assigned a CVE ID via DWF (CVE-2017-1000060)&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;h3 id=&quot;final-advisory&quot;&gt;Final Advisory&lt;/h3&gt;
@@ -310,6 +311,7 @@ Dany Bach [@ddxhunter, rioru.github.io]
 
 CVE-ID:
 =======
+CVE-2017-1000060
 
 OVE-ID:
 =======
@@ -330,6 +332,7 @@ Timeline:
 2017-03-28 - Created the proof of concept for the exploit
 2017-03-28 - CVE request to DWF
 2017-03-28 - Acknowledgement of the vendor
+2017-05-03 - Got assigned a CVE ID via DWF (CVE-2017-1000060)
 
 Status:
 =======
