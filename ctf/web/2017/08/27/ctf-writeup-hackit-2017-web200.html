@@ -171,18 +171,20 @@
 
 <h3 id="solution">Solution</h3>
 
-<p>Checking the source of the profile page, we can see some interesting information:
-<img src="/assets/media/hackit_5.png" alt="Authenticated on eonweb" /></p>
+<p>Checking the source of the profile page, we can see some interesting information:</p>
+
+<p><img src="/assets/media/hackit_5.png" alt="" /></p>
 
 <p>First, the secret is shown in an input tag. We can see that we can edit part of our profile as well by using <code class="highlighter-rouge">edit.php</code>. This page will edit the “about” field of our user.
 We can also see that there is an administrator function commented in the html, hinting us of a potential XSS or similar attack, as the administrator will have a list of updated status in his dashboard.</p>
 
 <p>XSS tentatives will be proven to be unsuccessful, as we do not have access to the <code class="highlighter-rouge">&lt;</code> and <code class="highlighter-rouge">&gt;</code> characters and we are not in an attribute. A bbcode function is however enabled on the application, allowing us to input interesting data, for example, <code class="highlighter-rouge">[code]Message[/code]</code> will be translated to <code class="highlighter-rouge">&lt;pre&gt;Message&lt;/pre&gt;</code>. Testing all possible bbcodes, one, in particular will be interesting to us, <code class="highlighter-rouge">color</code>.</p>
 
-<p><img src="/assets/media/hackit_2.png" alt="Authenticated on eonweb" /></p>
+<p><img src="/assets/media/hackit_2.png" alt="" /></p>
 
-<p>The <code class="highlighter-rouge">color</code> bbcode injected, we can see the result:
-<img src="/assets/media/hackit_3.png" alt="Authenticated on eonweb" /></p>
+<p>The <code class="highlighter-rouge">color</code> bbcode injected, we can see the result:</p>
+
+<p><img src="/assets/media/hackit_3.png" alt="" /></p>
 
 <p>As shown in the screenshot, the parameter “test” is inserted inside a <code class="highlighter-rouge">style</code> tag, and since other characters are not correctly filtered, we can do a CSS injection:</p>
 

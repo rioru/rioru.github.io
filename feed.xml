@@ -16,18 +16,20 @@
 
 &lt;h3 id=&quot;solution&quot;&gt;Solution&lt;/h3&gt;
 
-&lt;p&gt;Checking the source of the profile page, we can see some interesting information:
-&lt;img src=&quot;/assets/media/hackit_5.png&quot; alt=&quot;Authenticated on eonweb&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;Checking the source of the profile page, we can see some interesting information:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/media/hackit_5.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
 
 &lt;p&gt;First, the secret is shown in an input tag. We can see that we can edit part of our profile as well by using &lt;code class=&quot;highlighter-rouge&quot;&gt;edit.php&lt;/code&gt;. This page will edit the “about” field of our user.
 We can also see that there is an administrator function commented in the html, hinting us of a potential XSS or similar attack, as the administrator will have a list of updated status in his dashboard.&lt;/p&gt;
 
 &lt;p&gt;XSS tentatives will be proven to be unsuccessful, as we do not have access to the &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;gt;&lt;/code&gt; characters and we are not in an attribute. A bbcode function is however enabled on the application, allowing us to input interesting data, for example, &lt;code class=&quot;highlighter-rouge&quot;&gt;[code]Message[/code]&lt;/code&gt; will be translated to &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;pre&amp;gt;Message&amp;lt;/pre&amp;gt;&lt;/code&gt;. Testing all possible bbcodes, one, in particular will be interesting to us, &lt;code class=&quot;highlighter-rouge&quot;&gt;color&lt;/code&gt;.&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;/assets/media/hackit_2.png&quot; alt=&quot;Authenticated on eonweb&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/assets/media/hackit_2.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
 
-&lt;p&gt;The &lt;code class=&quot;highlighter-rouge&quot;&gt;color&lt;/code&gt; bbcode injected, we can see the result:
-&lt;img src=&quot;/assets/media/hackit_3.png&quot; alt=&quot;Authenticated on eonweb&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;The &lt;code class=&quot;highlighter-rouge&quot;&gt;color&lt;/code&gt; bbcode injected, we can see the result:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/media/hackit_3.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
 
 &lt;p&gt;As shown in the screenshot, the parameter “test” is inserted inside a &lt;code class=&quot;highlighter-rouge&quot;&gt;style&lt;/code&gt; tag, and since other characters are not correctly filtered, we can do a CSS injection:&lt;/p&gt;
 
