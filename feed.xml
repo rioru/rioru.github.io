@@ -32,9 +32,12 @@
 &lt;h3 id=&quot;idea&quot;&gt;Idea&lt;/h3&gt;
 &lt;p&gt;After seeing some other write-ups for this challenge, it seems like there’s a way to scramble the cube enough to give the solution with enough permutations. My solution is a little bit different in the fact that I am going to solve it using a rubiks solver rather than using a brute-forcy way.&lt;/p&gt;
 
-&lt;p&gt;The different difficulties I encountered during the challenge development:
-	- The color opposites of the cubes weren’t always the same (generally white is supposed to be at the opposite of yellow, red &amp;lt;&amp;gt; orange and blue &amp;lt;&amp;gt; green), but it wasn’t always the case and I lost some time because of that.
-	- Sometimes the center of the cube wasn’t properly rotated, so I had to add a little bit more operations at the end of the script to try 3 other cube combinations and try to read a QR-code.&lt;/p&gt;
+&lt;p&gt;The different difficulties I encountered during the challenge development:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;The color opposites of the cubes weren’t always the same (generally white is supposed to be at the opposite of yellow, red &amp;lt;&amp;gt; orange and blue &amp;lt;&amp;gt; green), but it wasn’t always the case and I lost some time because of that.&lt;/li&gt;
+  &lt;li&gt;Sometimes the center of the cube wasn’t properly rotated, so I had to add a little bit more operations at the end of the script to try 3 other cube combinations and try to read a QR-code.&lt;/li&gt;
+&lt;/ul&gt;
 
 &lt;h3 id=&quot;the-code&quot;&gt;The code&lt;/h3&gt;
 
@@ -94,14 +97,14 @@ if args.download:
 	for suf in suffix:
 		current_name = prefix + suf + extension
 		current_url = url + &amp;quot;images/&amp;quot; + current_name
-		logging.info(current_url)
+		log.info(current_url)
 		r = requests.get(current_url)
 		path = current_name
 		if r.status_code == 200:
 			with open(path, &amp;#39;w+&amp;#39;) as f:
 				for chunk in r.iter_content(1024):
 					f.write(chunk)
-		logging.info(&amp;quot;Getting &amp;quot;+ prefix + suf)
+		log.info(&amp;quot;Getting &amp;quot;+ prefix + suf)
 
 s = 82
 

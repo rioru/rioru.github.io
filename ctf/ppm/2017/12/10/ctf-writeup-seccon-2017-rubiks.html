@@ -187,9 +187,12 @@
 <h3 id="idea">Idea</h3>
 <p>After seeing some other write-ups for this challenge, it seems like there’s a way to scramble the cube enough to give the solution with enough permutations. My solution is a little bit different in the fact that I am going to solve it using a rubiks solver rather than using a brute-forcy way.</p>
 
-<p>The different difficulties I encountered during the challenge development:
-	- The color opposites of the cubes weren’t always the same (generally white is supposed to be at the opposite of yellow, red &lt;&gt; orange and blue &lt;&gt; green), but it wasn’t always the case and I lost some time because of that.
-	- Sometimes the center of the cube wasn’t properly rotated, so I had to add a little bit more operations at the end of the script to try 3 other cube combinations and try to read a QR-code.</p>
+<p>The different difficulties I encountered during the challenge development:</p>
+
+<ul>
+  <li>The color opposites of the cubes weren’t always the same (generally white is supposed to be at the opposite of yellow, red &lt;&gt; orange and blue &lt;&gt; green), but it wasn’t always the case and I lost some time because of that.</li>
+  <li>Sometimes the center of the cube wasn’t properly rotated, so I had to add a little bit more operations at the end of the script to try 3 other cube combinations and try to read a QR-code.</li>
+</ul>
 
 <h3 id="the-code">The code</h3>
 
@@ -249,14 +252,14 @@ if args.download:
 	for suf in suffix:
 		current_name = prefix + suf + extension
 		current_url = url + &quot;images/&quot; + current_name
-		logging.info(current_url)
+		log.info(current_url)
 		r = requests.get(current_url)
 		path = current_name
 		if r.status_code == 200:
 			with open(path, &#39;w+&#39;) as f:
 				for chunk in r.iter_content(1024):
 					f.write(chunk)
-		logging.info(&quot;Getting &quot;+ prefix + suf)
+		log.info(&quot;Getting &quot;+ prefix + suf)
 
 s = 82
 
