@@ -165,6 +165,8 @@
 	  <div class="article_body">
 	  <p>I participated at the HackIT 2017 CTF with team sec0d, and we finished first. As requested by some other teams, here’s a write-up for the Web200 CTF challenge of HackIT 2017.</p>
 
+<p><img src="/assets/media/hackit_5.png" alt="" /></p>
+
 <h3 id="introduction">Introduction</h3>
 
 <p>The application seems pretty straightforward, we can register with an username, a password, and a secret. The goal of the challenge is to recover the secret of an administrator.</p>
@@ -172,8 +174,6 @@
 <h3 id="solution">Solution</h3>
 
 <p>Checking the source of the profile page, we can see some interesting information:</p>
-
-<p><img src="/assets/media/hackit_5.png" alt="" /></p>
 
 <p>First, the secret is shown in an input tag. We can see that we can edit part of our profile as well by using <code class="highlighter-rouge">edit.php</code>. This page will edit the “about” field of our user.
 We can also see that there is an administrator function commented in the html, hinting us of a potential XSS or similar attack, as the administrator will have a list of updated status in his dashboard.</p>

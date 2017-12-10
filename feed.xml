@@ -10,9 +10,9 @@
 				<title>CTF Write-up - SECCON 2017 Qubic Rube - Solving a Rubik's without force</title>
 				<description>&lt;p&gt;Here’s the solution for a programming challenge I did during SECCON 2017.&lt;/p&gt;
 
-&lt;h3 id=&quot;introduction&quot;&gt;Introduction&lt;/h3&gt;
-
 &lt;p&gt;&lt;img src=&quot;/assets/media/qubic1.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;introduction&quot;&gt;Introduction&lt;/h3&gt;
 
 &lt;p&gt;The challenge is a programming challenge, we get greeted with a three.js cube with 6 textures, one for each faces with a QR-Code on them. Using &lt;code class=&quot;highlighter-rouge&quot;&gt;zbar&lt;/code&gt; to read them, we will see this message:&lt;/p&gt;
 
@@ -475,6 +475,8 @@ for i in range(3):
 				<title>CTF Write-Up - HackIT CTF 2017 Web200</title>
 				<description>&lt;p&gt;I participated at the HackIT 2017 CTF with team sec0d, and we finished first. As requested by some other teams, here’s a write-up for the Web200 CTF challenge of HackIT 2017.&lt;/p&gt;
 
+&lt;p&gt;&lt;img src=&quot;/assets/media/hackit_5.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
 &lt;h3 id=&quot;introduction&quot;&gt;Introduction&lt;/h3&gt;
 
 &lt;p&gt;The application seems pretty straightforward, we can register with an username, a password, and a secret. The goal of the challenge is to recover the secret of an administrator.&lt;/p&gt;
@@ -482,8 +484,6 @@ for i in range(3):
 &lt;h3 id=&quot;solution&quot;&gt;Solution&lt;/h3&gt;
 
 &lt;p&gt;Checking the source of the profile page, we can see some interesting information:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/media/hackit_5.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
 
 &lt;p&gt;First, the secret is shown in an input tag. We can see that we can edit part of our profile as well by using &lt;code class=&quot;highlighter-rouge&quot;&gt;edit.php&lt;/code&gt;. This page will edit the “about” field of our user.
 We can also see that there is an administrator function commented in the html, hinting us of a potential XSS or similar attack, as the administrator will have a list of updated status in his dashboard.&lt;/p&gt;
